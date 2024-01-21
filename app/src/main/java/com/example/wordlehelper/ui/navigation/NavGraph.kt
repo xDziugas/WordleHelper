@@ -9,6 +9,7 @@ import com.example.wordlehelper.ui.view.screens.SimulatorScreen
 import com.example.wordlehelper.ui.view.screens.SolverScreen
 import com.example.wordlehelper.ui.view.screens.SplashScreen
 import com.example.wordlehelper.ui.view.screens.StartScreen
+import com.example.wordlehelper.ui.viewmodel.SolverViewModel
 import com.example.wordlehelper.ui.viewmodel.ThemeViewModel
 
 object MainDestinations {
@@ -41,7 +42,11 @@ fun WordleHelperNavGraph(
             )
         }
         composable(MainDestinations.SOLVER_SCREEN) {
-            SolverScreen(navController)
+            SolverScreen(
+                navController = navController,
+                viewModel = SolverViewModel(),
+                isDarkTheme = themeViewModel.isDarkTheme
+            )
         }
         composable(MainDestinations.SIMULATOR_SCREEN) {
             SimulatorScreen(navController)
