@@ -55,7 +55,7 @@ fun StartScreen(
             ) {
                 Image(
                     painter = painterResource(
-                        id = R.drawable.boxes_color
+                        id = R.drawable.boxes
                     ),
                     contentDescription = "Icon"
                 )
