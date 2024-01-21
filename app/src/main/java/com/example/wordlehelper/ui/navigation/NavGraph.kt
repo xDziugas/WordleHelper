@@ -9,6 +9,7 @@ import com.example.wordlehelper.ui.view.screens.SimulatorScreen
 import com.example.wordlehelper.ui.view.screens.SolverScreen
 import com.example.wordlehelper.ui.view.screens.SplashScreen
 import com.example.wordlehelper.ui.view.screens.StartScreen
+import com.example.wordlehelper.ui.viewmodel.ThemeViewModel
 
 object MainDestinations {
     const val SPLASH_SCREEN = "splash"
@@ -19,7 +20,10 @@ object MainDestinations {
 }
 
 @Composable
-fun WordleHelperNavGraph(navController: NavHostController){
+fun WordleHelperNavGraph(
+    navController: NavHostController,
+    themeViewModel: ThemeViewModel
+){
     NavHost(
         navController = navController,
         startDestination = MainDestinations.SPLASH_SCREEN
@@ -28,7 +32,13 @@ fun WordleHelperNavGraph(navController: NavHostController){
             SplashScreen(navController)
         }
         composable(MainDestinations.START_SCREEN){
-            StartScreen(navController)
+            StartScreen(
+                navController = navController,
+                isDarkTheme = themeViewModel.isDarkTheme,
+                toggleTheme = {
+                    themeViewModel.toggleTheme()
+                }
+            )
         }
         composable(MainDestinations.SOLVER_SCREEN) {
             SolverScreen(navController)
