@@ -7,15 +7,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
+import androidx.compose.material.Card
 import androidx.compose.material.DropdownMenu
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.MaterialTheme
@@ -23,6 +28,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +48,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.wordlehelper.ui.viewmodel.SolverViewModel
 import java.util.Locale
+import androidx.compose.runtime.livedata.observeAsState
+
 
 @Composable
 fun SolverScreen(
@@ -48,6 +57,42 @@ fun SolverScreen(
     viewModel: SolverViewModel,
     isDarkTheme: Boolean
 ) {
+    val topGuesses by viewModel.topGuesses.collectAsState()
+
+    val context = LocalContext.current
+
+    LaunchedEffect(key1 = true) {
+        viewModel.loadWordsAndAnswers(context)
+    }
+
+    // When the "Calculate" button is pressed, display the top guesses
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        items(topGuesses) { guess ->
+            Card(
+                backgroundColor = MaterialTheme.colors.surface,
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = guess.word,
+                        style = MaterialTheme.typography.subtitle1
+                    )
+                    Text(
+                        text = "Score: ${guess.infoScore}",
+                        style = MaterialTheme.typography.caption
+                    )
+                }
+            }
+        }
+    }
+
+    //game grid
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -85,7 +130,7 @@ fun SolverScreen(
             }
 
             Button(
-                onClick = {/*TODO: Calculate button functionality */},
+                onClick = { viewModel.onCalculatePressed() },
                 modifier = Modifier.padding(top = 16.dp)
             ) {
                 Text(text = "Calculate")
@@ -212,3 +257,5 @@ fun ColorSelectableSquare(
         }
     }
 }
+
+
