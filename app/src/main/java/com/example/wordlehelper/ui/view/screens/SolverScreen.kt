@@ -1,5 +1,6 @@
 package com.example.wordlehelper.ui.view.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -57,21 +60,19 @@ fun SolverScreen(
     viewModel: SolverViewModel,
     isDarkTheme: Boolean
 ) {
+    val wordData by viewModel.wordData.collectAsState()
     val topGuesses by viewModel.topGuesses.collectAsState()
+    val isDataLoaded by viewModel.isDataLoaded.collectAsState()
 
-    val context = LocalContext.current
-
-    LaunchedEffect(key1 = true) {
-        viewModel.loadWordsAndAnswers(context)
-    }
+    Log.d("SolverScreen", "SolverScreen: topGuesses = $topGuesses")
 
     // When the "Calculate" button is pressed, display the top guesses
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        items(topGuesses) { guess ->
+        itemsIndexed(topGuesses) { index, guess ->
             Card(
                 backgroundColor = MaterialTheme.colors.surface,
                 modifier = Modifier.padding(8.dp)
@@ -80,7 +81,7 @@ fun SolverScreen(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = guess.word,
+                        text = "${index + 1}. ${guess.word}",
                         style = MaterialTheme.typography.subtitle1
                     )
                     Text(

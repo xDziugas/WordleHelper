@@ -23,7 +23,8 @@ object MainDestinations {
 @Composable
 fun WordleHelperNavGraph(
     navController: NavHostController,
-    themeViewModel: ThemeViewModel
+    themeViewModel: ThemeViewModel,
+    solverViewModel: SolverViewModel
 ){
     NavHost(
         navController = navController,
@@ -44,7 +45,7 @@ fun WordleHelperNavGraph(
         composable(MainDestinations.SOLVER_SCREEN) {
             SolverScreen(
                 navController = navController,
-                viewModel = SolverViewModel(),
+                viewModel = solverViewModel,
                 isDarkTheme = themeViewModel.isDarkTheme
             )
         }
