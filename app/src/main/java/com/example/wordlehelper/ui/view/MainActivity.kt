@@ -33,8 +33,9 @@ fun AppContent(themeViewModel: ThemeViewModel){
     val context = LocalContext.current
 
     LaunchedEffect(key1 = true) {
-        viewModel.loadWordsAndAnswers(context)
-        println("SolverScreen: loaded words and answers")
+        //Use loadWordsAndAnswers to load all possible entries (x4)
+        viewModel.loadAnswersOnly(context)
+        println("SolverScreen: loaded answers")
     }
 
     WordleHelperTheme(darkTheme = themeViewModel.isDarkTheme) {

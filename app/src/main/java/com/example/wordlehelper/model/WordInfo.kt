@@ -1,7 +1,12 @@
 package com.example.wordlehelper.model
 
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import com.google.common.math.BigIntegerMath.log2
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlin.math.ln
 import kotlin.math.log2
 
@@ -12,58 +17,74 @@ data class WordInfo(
 
 fun filterPossibleAnswers(
     allWords: List<String>,
-    rowsInputs: List<List<WordInput>> // List of rows, each row is a list of WordInput
+    rowsInputs: List<List<WordInput>>
 ): List<String> {
-    var possibleAnswers = allWords
-
-    for (inputs in rowsInputs) {
-        // Filter out words based on the inputs from the current row.
-        possibleAnswers = possibleAnswers.filter { word ->
-            inputs.all { input ->
-                when (input.state) {
-                    LetterState.CORRECT -> word[input.position] == input.letter
-                    LetterState.PRESENT -> word.contains(input.letter) && word[input.position] != input.letter
-                    LetterState.ABSENT -> !word.contains(input.letter)
-                }
+    return allWords.filter { word ->
+        rowsInputs.flatten().all { input ->
+            when (input.state) {
+                LetterState.CORRECT -> word[input.position] == input.letter.lowercaseChar()
+                LetterState.PRESENT -> input.letter.lowercaseChar() in word && word[input.position] != input.letter.lowercaseChar()
+                LetterState.ABSENT -> input.letter.lowercaseChar() !in word
             }
         }
     }
-
-    return possibleAnswers
 }
 
-
-fun calculateInformationScores(
+suspend fun calculateInformationScores(
     possibleAnswers: List<String>
 ): List<WordInfo> {
-    return possibleAnswers.map { word ->
-        val score = calculateEntropy(word, possibleAnswers)
-        WordInfo(word, score)
+    return coroutineScope {
+        possibleAnswers.map { word ->
+            async(Dispatchers.Default) {
+                val score = calculateEntropy(word, possibleAnswers)
+                WordInfo(word, score)
+            }
+        }.awaitAll()
     }
 }
 
+fun calculateEntropy(guess: String, possibleWords: List<String>): Float {
+    val patternCounts = mutableMapOf<String, Int>()
 
-fun findBestGuess(words: List<String>, currentInputs: List<List<WordInput>>): WordInfo {
-    val filteredWords = filterPossibleAnswers(words, currentInputs)
-    return filteredWords.map { word ->
-        val infoScore = calculateEntropy(word, filteredWords)
-        WordInfo(word, infoScore)
-    }.maxByOrNull { it.infoScore } ?: WordInfo("", 0f)
+    // Generate pattern counts for each possible word
+    possibleWords.forEach { word ->
+        val pattern = getPattern(guess, word)
+        patternCounts[pattern] = patternCounts.getOrDefault(pattern, 0) + 1
+    }
+
+    // Calculate the entropy based on these pattern counts
+    val totalPatterns = possibleWords.size.toFloat()
+    val entropy = patternCounts.values.fold(0f) { acc, count ->
+        val probability = count.toFloat() / totalPatterns
+        acc + if (probability > 0) -probability * (log2(probability)) else 0f
+    }
+
+    return entropy
 }
 
-fun calculateEntropy(word: String, possibleWords: List<String>): Float {
-    val letterFrequencies = IntArray(26) // 26 letters in the alphabet
+fun getPattern(guess: String, word: String): String {
+    val pattern = CharArray(guess.length) { 'A' } // Default to 'Absent'
+    val wordLetterCount = word.groupingBy { it }.eachCount().toMutableMap()
 
-    possibleWords.forEach { possibleWord ->
-        possibleWord.forEach { letter ->
-            letterFrequencies[letter.uppercaseChar() - 'A']++
+    // First pass for correct (C)
+    guess.forEachIndexed { index, c ->
+        if (word[index] == c) {
+            pattern[index] = 'C'
+            wordLetterCount[c] = wordLetterCount[c]?.minus(1) ?: 0
         }
     }
 
-    val totalLetters = possibleWords.size * 5 // Total number of letters in all words
-    return word.uppercase().toCharArray().distinct().sumOf { letter ->
-        val frequency = letterFrequencies[letter - 'A'].toDouble() / totalLetters
-        if (frequency > 0) -frequency * (ln(frequency) / ln(2.0)) else 0.0
-    }.toFloat()
+    // Second pass for present (P)
+    guess.forEachIndexed { index, c ->
+        if (pattern[index] == 'A' && wordLetterCount.getOrDefault(c, 0) > 0) {
+            pattern[index] = 'P'
+            wordLetterCount[c] = wordLetterCount[c]?.minus(1) ?: 0
+        }
+    }
+
+    return String(pattern)
 }
+
+
+
 

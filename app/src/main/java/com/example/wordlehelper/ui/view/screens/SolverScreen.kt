@@ -1,6 +1,5 @@
 package com.example.wordlehelper.ui.view.screens
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,9 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,7 +28,6 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,8 +47,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.wordlehelper.ui.viewmodel.SolverViewModel
 import java.util.Locale
-import androidx.compose.runtime.livedata.observeAsState
-
 
 @Composable
 fun SolverScreen(
@@ -60,52 +54,49 @@ fun SolverScreen(
     viewModel: SolverViewModel,
     isDarkTheme: Boolean
 ) {
-    val wordData by viewModel.wordData.collectAsState()
     val topGuesses by viewModel.topGuesses.collectAsState()
-    val isDataLoaded by viewModel.isDataLoaded.collectAsState()
+    val context = LocalContext.current
 
-    Log.d("SolverScreen", "SolverScreen: topGuesses = $topGuesses")
-
-    // When the "Calculate" button is pressed, display the top guesses
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(16.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        itemsIndexed(topGuesses) { index, guess ->
-            Card(
-                backgroundColor = MaterialTheme.colors.surface,
-                modifier = Modifier.padding(8.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "${index + 1}. ${guess.word}",
-                        style = MaterialTheme.typography.subtitle1
-                    )
-                    Text(
-                        text = "Score: ${guess.infoScore}",
-                        style = MaterialTheme.typography.caption
-                    )
-                }
-            }
-        }
-    }
-
-    //game grid
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colors.background)
     ){
-        val context = LocalContext.current
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            itemsIndexed(topGuesses) { index, guess ->
+                Card(
+                    backgroundColor = MaterialTheme.colors.surface,
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "${index + 1}. ${guess.word}",
+                            style = MaterialTheme.typography.subtitle1.copy(fontSize = 22.sp),
+                            color = MaterialTheme.colors.background
+                        )
+                        Text(
+                            text = String.format("%.3f", guess.infoScore),
+                            style = MaterialTheme.typography.caption.copy(fontSize = 20.sp),
+                            color = MaterialTheme.colors.background
+                        )
+                    }
+                }
+            }
+        }
 
+        // Game grid
         Column(
             modifier = Modifier
                 .padding(16.dp)
-                .fillMaxWidth()
-                .align(Alignment.BottomCenter),
+                .fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ){
@@ -130,11 +121,23 @@ fun SolverScreen(
                 )
             }
 
-            Button(
-                onClick = { viewModel.onCalculatePressed() },
-                modifier = Modifier.padding(top = 16.dp)
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Calculate")
+                Button(
+                    onClick = { viewModel.onCalculatePressed() },
+                    modifier = Modifier.padding(top = 16.dp)
+                ) {
+                    Text(text = "Calculate")
+                }
+
+                Button(
+                    onClick = { viewModel.clearBoard() },
+                    modifier = Modifier.padding(top = 16.dp)
+                ) {
+                    Text(text = "Clear Board")
+                }
             }
         }
     }

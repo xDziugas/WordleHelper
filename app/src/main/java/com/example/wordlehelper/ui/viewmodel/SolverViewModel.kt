@@ -17,7 +17,6 @@ import com.example.wordlehelper.model.WordInfo
 import com.example.wordlehelper.model.WordInput
 import com.example.wordlehelper.model.calculateInformationScores
 import com.example.wordlehelper.model.filterPossibleAnswers
-import com.example.wordlehelper.model.findBestGuess
 import com.example.wordlehelper.ui.view.MainActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +26,7 @@ import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.lang.Exception
 import java.util.concurrent.Flow.Subscriber
 
 class SolverViewModel : ViewModel(){
@@ -48,10 +48,12 @@ class SolverViewModel : ViewModel(){
     val topGuesses = _topGuesses.asStateFlow()
 
     private val _wordData = MutableStateFlow(WordData(emptyList(), emptyList()))
-    val wordData: StateFlow<WordData> = _wordData
+    val wordData: StateFlow<WordData> get() = _wordData
 
     private val _isDataLoaded = MutableStateFlow(false)
     val isDataLoaded: StateFlow<Boolean> = _isDataLoaded
+
+    private var initialWordScores: List<WordInfo>? = null
 
     fun loadWordsAndAnswers(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -59,6 +61,16 @@ class SolverViewModel : ViewModel(){
             val loadedAnswers = readWordsFromFile(context, "Answers.txt")
             withContext(Dispatchers.Main) {
                 _wordData.value.words = loadedWords
+                _wordData.value.answers = loadedAnswers
+                calculateTopGuesses(emptyList())
+            }
+        }
+    }
+
+    fun loadAnswersOnly(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val loadedAnswers = readWordsFromFile(context, "Answers.txt")
+            withContext(Dispatchers.Main) {
                 _wordData.value.answers = loadedAnswers
                 calculateTopGuesses(emptyList())
             }
@@ -80,7 +92,7 @@ class SolverViewModel : ViewModel(){
 
     fun onCalculatePressed() {
         val currentInputs = convertBoardToInputs()
-        processWords(currentInputs)
+        calculateTopGuesses(currentInputs)
     }
 
     private fun convertBoardToInputs(): List<List<WordInput>> {
@@ -102,55 +114,35 @@ class SolverViewModel : ViewModel(){
         }
     }
 
-    private fun processWords(currentInputs: List<List<WordInput>>) {
-        val wordsList = _wordData.value.words
-
-        if (wordsList.isNullOrEmpty()) {
-            Log.d("SolverViewModel", "Words list is empty or null")
-            return
-        }
-
-        val filteredWords = filterPossibleAnswers(wordsList, currentInputs)
-        Log.d("SolverViewModel", "Filtered Words: $filteredWords")
-        Log.d("SolverViewModel", "Filtered Words size: ${filteredWords.size}")
-
-        val infoScores = calculateInformationScores(filteredWords)
-        Log.d("SolverViewModel", "Info Scores: $infoScores")
-
-        val topGuesses = infoScores.sortedByDescending { it.infoScore }.take(10)
-        _topGuesses.value = topGuesses
-    }
-
     fun updateSquareColor(rowIndex: Int, squareIndex: Int, color: Color) {
         rowColors[rowIndex][squareIndex] = color
     }
 
-    fun calculateInitialTopGuesses() {
-        if (_isDataLoaded.value) {
-            calculateTopGuesses(emptyList()) // Calculate with no filters
-        }
+    fun clearBoard() {
+        rows.replaceAll { "" }
+        rowColors.replaceAll { MutableList(5) { Color.Unspecified } }
     }
 
     private fun calculateTopGuesses(inputs: List<List<WordInput>>) {
-        try {
-            val filteredWords = if (inputs.isNotEmpty()) {
-                filterPossibleAnswers(_wordData.value.words, inputs)
-            } else {
-                _wordData.value.words
+        viewModelScope.launch {
+            try{
+                if (inputs.all { it.isEmpty() } && initialWordScores != null) {
+                    _topGuesses.value = initialWordScores!!.sortedByDescending { it.infoScore }.take(10)
+                } else {
+                    val filteredWords = filterPossibleAnswers(_wordData.value.answers, inputs)
+                    calculateInformationScores(filteredWords).let { infoScores ->
+                        val topGuesses = infoScores.sortedByDescending { it.infoScore }.take(10)
+                        _topGuesses.value = topGuesses
+                    }
+                    if(initialWordScores == null){
+                        initialWordScores = _topGuesses.value
+                    }
+                }
+            }catch (e: Exception){
+                Log.e("SolverViewModel", "Error calculating top guesses", e)
             }
 
-            val infoScores = calculateInformationScores(filteredWords)
-            val topGuesses = infoScores.sortedByDescending { it.infoScore }.take(10)
-            _topGuesses.value = topGuesses
-
-            Log.d("SolverViewModel", "Top Guesses: $topGuesses")
-            Log.d("SolverViewModel", "_topGuesses: ${_topGuesses.value}")
-
-        } catch (e: Exception) {
-            Log.e("SolverViewModel", "Error in calculateTopGuesses: ${e.message}")
-            // Handle the exception or set a default value
         }
     }
-
 }
 
