@@ -1,7 +1,5 @@
 package com.example.wordlehelper.model
 
-import androidx.compose.ui.graphics.Color
-
 data class WordInput(
     val letter: Char,
     val position: Int,

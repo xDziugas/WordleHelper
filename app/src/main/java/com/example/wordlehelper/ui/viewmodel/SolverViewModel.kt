@@ -2,45 +2,31 @@ package com.example.wordlehelper.ui.viewmodel
 
 import android.content.Context
 import android.util.Log
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.wordlehelper.model.LetterState
+import com.example.wordlehelper.model.RowState
 import com.example.wordlehelper.model.WordData
 import com.example.wordlehelper.model.WordInfo
 import com.example.wordlehelper.model.WordInput
 import com.example.wordlehelper.model.calculateInformationScores
 import com.example.wordlehelper.model.filterPossibleAnswers
-import com.example.wordlehelper.ui.view.MainActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
-import java.lang.Exception
-import java.util.concurrent.Flow.Subscriber
+import java.util.Locale
 
 class SolverViewModel : ViewModel(){
-    var rows = mutableStateListOf("", "", "", "", "", "")
-    var rowColors = mutableStateListOf(
-        MutableList(5) { Color.Unspecified },
-        MutableList(5) { Color.Unspecified },
-        MutableList(5) { Color.Unspecified },
-        MutableList(5) { Color.Unspecified },
-        MutableList(5) { Color.Unspecified },
-        MutableList(5) { Color.Unspecified }
-    )
+    var rows = mutableStateListOf<RowState>()
 
     init {
+        initializeRows()
         calculateTopGuesses(emptyList())
     }
 
@@ -50,10 +36,15 @@ class SolverViewModel : ViewModel(){
     private val _wordData = MutableStateFlow(WordData(emptyList(), emptyList()))
     val wordData: StateFlow<WordData> get() = _wordData
 
-    private val _isDataLoaded = MutableStateFlow(false)
-    val isDataLoaded: StateFlow<Boolean> = _isDataLoaded
-
     private var initialWordScores: List<WordInfo>? = null
+
+    private fun initializeRows() {
+        val initialRow = RowState("", MutableList(5){ Color.Unspecified})
+        rows.clear()
+        repeat(6) {
+            rows.add(initialRow)
+        }
+    }
 
     fun loadWordsAndAnswers(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -97,16 +88,16 @@ class SolverViewModel : ViewModel(){
 
     private fun convertBoardToInputs(): List<List<WordInput>> {
         // Convert the current state of the board into a list of lists of WordInput
-        return rows.mapIndexed { rowIndex, word ->
-            word.mapIndexedNotNull { charIndex, char ->
-                if (char.isLetter()) { // Ensure only valid letters are included
-                    val state = when (rowColors[rowIndex][charIndex]) {
+        return rows.map { rowState ->
+            rowState.text.mapIndexedNotNull { index, char ->
+                if (char.isLetter()) {
+                    val state = when (rowState.colors[index]) {
                         Color.Green -> LetterState.CORRECT
                         Color.Yellow -> LetterState.PRESENT
                         Color.Gray -> LetterState.ABSENT
                         else -> LetterState.ABSENT
                     }
-                    WordInput(char.uppercaseChar(), charIndex, state)
+                    WordInput(char.uppercaseChar(), index, state)
                 } else {
                     null
                 }
@@ -114,13 +105,38 @@ class SolverViewModel : ViewModel(){
         }
     }
 
+    //Trigger recomposition???
     fun updateSquareColor(rowIndex: Int, squareIndex: Int, color: Color) {
-        rowColors[rowIndex][squareIndex] = color
+        val row = rows[rowIndex]
+        if (squareIndex < row.colors.size) {
+            val updatedColors = row.colors.toMutableList().apply {
+                this[squareIndex] = color
+            }
+            rows[rowIndex] = row.copy(colors = updatedColors)
+        } else {
+            val extendedColors = row.colors.toMutableList().apply {
+                addAll(List(squareIndex - size + 1) { Color.Unspecified })
+                this[squareIndex] = color
+            }
+            rows[rowIndex] = row.copy(colors = extendedColors)
+        }
+    }
+
+    //Trigger recomposition
+    fun updateWord(rowIndex: Int, word: String) {
+        val newText = word.uppercase(Locale.getDefault()).take(5)
+        val updatedRow = rows[rowIndex].copy(text = newText)
+        rows[rowIndex] = updatedRow
     }
 
     fun clearBoard() {
-        rows.replaceAll { "" }
-        rowColors.replaceAll { MutableList(5) { Color.Unspecified } }
+        rows.replaceAll { rowState ->
+            rowState.copy(
+                text = "",
+                colors = MutableList(5) { Color.Unspecified }
+            )
+        }
+        onCalculatePressed()
     }
 
     private fun calculateTopGuesses(inputs: List<List<WordInput>>) {
@@ -141,7 +157,6 @@ class SolverViewModel : ViewModel(){
             }catch (e: Exception){
                 Log.e("SolverViewModel", "Error calculating top guesses", e)
             }
-
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.example.wordlehelper.ui.view.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -44,15 +44,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import com.example.wordlehelper.ui.viewmodel.SolverViewModel
-import java.util.Locale
 
 @Composable
 fun SolverScreen(
-    navController: NavHostController,
-    viewModel: SolverViewModel,
-    isDarkTheme: Boolean
+    viewModel: SolverViewModel
 ) {
     val topGuesses by viewModel.topGuesses.collectAsState()
     val context = LocalContext.current
@@ -72,19 +68,21 @@ fun SolverScreen(
             itemsIndexed(topGuesses) { index, guess ->
                 Card(
                     backgroundColor = MaterialTheme.colors.surface,
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .height(64.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(4.dp)
                     ) {
                         Text(
                             text = "${index + 1}. ${guess.word}",
-                            style = MaterialTheme.typography.subtitle1.copy(fontSize = 22.sp),
+                            style = MaterialTheme.typography.subtitle1.copy(fontSize = 20.sp),
                             color = MaterialTheme.colors.background
                         )
                         Text(
                             text = String.format("%.3f", guess.infoScore),
-                            style = MaterialTheme.typography.caption.copy(fontSize = 20.sp),
+                            style = MaterialTheme.typography.caption.copy(fontSize = 18.sp),
                             color = MaterialTheme.colors.background
                         )
                     }
@@ -100,25 +98,17 @@ fun SolverScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ){
-            viewModel.rows.forEachIndexed { index, word ->
+            viewModel.rows.forEachIndexed { rowIndex, row ->
+                println("row text: ${row.text}")
                 WordRow(
-                    word = word,
-                    isActive = viewModel.rows[index].length < 5 && viewModel.rows.take(index).all { it.length == 5 },
+                    word = row.text,
+                    isActive = viewModel.rows[rowIndex].text.length < 5 && viewModel.rows.take(rowIndex).all { word -> word.text.length == 5 },
                     onWordChange = { newWord ->
-                        viewModel.rows[index] = newWord.uppercase(Locale.getDefault()).take(5)
-                    },
-                    onEnter = {
-                        if(word.length == 5 && isValidWord(word)){
-                            Toast.makeText(context, "Word entered: $word", Toast.LENGTH_SHORT).show()
-                        }else{
-                            Toast.makeText(context, "Invalid word: $word", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    colors = viewModel.rowColors[index],
-                    onColorChange = { squareIndex, color ->
-                        viewModel.updateSquareColor(index, squareIndex, color)
+                        viewModel.updateWord(rowIndex, newWord)
                     }
-                )
+                ) { squareIndex, color ->
+                    viewModel.updateSquareColor(rowIndex, squareIndex, color)
+                }
             }
 
             Row(
@@ -149,8 +139,6 @@ fun WordRow(
     word: String,
     isActive: Boolean,
     onWordChange: (String) -> Unit,
-    onEnter: () -> Unit,
-    colors: List<Color>,
     onColorChange: (Int, Color) -> Unit
 ) {
     val focusRequesters = remember { List(5) { FocusRequester() } }
@@ -161,6 +149,7 @@ fun WordRow(
     ) {
         (0 until 5).forEach { index ->
             if (isActive) {
+                println("word text: $word")
                 TextField(
                     value = if (index < word.length) word[index].toString() else "",
                     onValueChange = { input ->
@@ -201,10 +190,11 @@ fun WordRow(
                 // Non-active square
                 ColorSelectableSquare(
                     letter = word.getOrNull(index)?.toString() ?: "",
-                    initialColor = MaterialTheme.colors.surface,
+                    initialColor = MaterialTheme.colors.onSurface,
                     onColorSelected = { newColor ->
                         onColorChange(index, newColor)
-                    }
+                    },
+                    color = MaterialTheme.colors.surface
                 )
             }
         }
@@ -212,8 +202,8 @@ fun WordRow(
 }
 
 fun isValidWord(word: String): Boolean {
-    // TODO: Implement word validation logic
-    return word.length == 5
+    //TODO: fix letter validation
+    return word.length == 5 && word.all { it.isLetter() }
 }
 
 //Inactive square with a dropdown to change its color
@@ -221,7 +211,8 @@ fun isValidWord(word: String): Boolean {
 fun ColorSelectableSquare(
     letter: String,
     initialColor: Color,
-    onColorSelected: (Color) -> Unit
+    onColorSelected: (Color) -> Unit,
+    color: Color
 ) {
     var expanded by remember { mutableStateOf(false) }
     var selectedColor by remember { mutableStateOf(initialColor) }
@@ -230,7 +221,7 @@ fun ColorSelectableSquare(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(48.dp)
-            .background(selectedColor, shape = RoundedCornerShape(4.dp))
+            .background(if(letter.isEmpty())color else selectedColor, shape = RoundedCornerShape(4.dp))
             .clickable { expanded = true }
             .border(1.dp, Color.Black, shape = RoundedCornerShape(4.dp))
     ) {

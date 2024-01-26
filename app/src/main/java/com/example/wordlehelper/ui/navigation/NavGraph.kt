@@ -44,9 +44,7 @@ fun WordleHelperNavGraph(
         }
         composable(MainDestinations.SOLVER_SCREEN) {
             SolverScreen(
-                navController = navController,
-                viewModel = solverViewModel,
-                isDarkTheme = themeViewModel.isDarkTheme
+                viewModel = solverViewModel
             )
         }
         composable(MainDestinations.SIMULATOR_SCREEN) {

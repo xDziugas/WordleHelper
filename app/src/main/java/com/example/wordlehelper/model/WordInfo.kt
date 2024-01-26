@@ -1,13 +1,9 @@
 package com.example.wordlehelper.model
 
-import android.util.Log
-import androidx.compose.ui.graphics.Color
-import com.google.common.math.BigIntegerMath.log2
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlin.math.ln
 import kotlin.math.log2
 
 data class WordInfo(
