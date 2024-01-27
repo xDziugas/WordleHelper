@@ -3,11 +3,13 @@ package com.example.wordlehelper.ui.view
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.example.wordlehelper.repository.WordRepository
 import com.example.wordlehelper.ui.navigation.WordleHelperNavGraph
 import com.example.wordlehelper.ui.theme.WordleHelperTheme
 import com.example.wordlehelper.ui.viewmodel.SolverViewModel
@@ -20,29 +22,29 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContent{
             val themeViewModel: ThemeViewModel = viewModel()
-            AppContent(themeViewModel)
+            val viewModel: SolverViewModel by viewModels()
+            AppContent(themeViewModel, viewModel)
         }
     }
 }
 
 @Composable
-fun AppContent(themeViewModel: ThemeViewModel){
+fun AppContent(
+    themeViewModel: ThemeViewModel,
+    solverViewModel: SolverViewModel
+){
     val navController = rememberNavController()
-    val viewModel: SolverViewModel = viewModel()
-
-    val context = LocalContext.current
 
     LaunchedEffect(key1 = true) {
         //Use loadWordsAndAnswers to load all possible entries (x4)
-        viewModel.loadAnswersOnly(context)
-        println("SolverScreen: loaded answers")
+        solverViewModel.loadAnswers()
     }
 
     WordleHelperTheme(darkTheme = themeViewModel.isDarkTheme) {
         WordleHelperNavGraph(
             navController = navController,
             themeViewModel = themeViewModel,
-            solverViewModel = viewModel
+            solverViewModel = solverViewModel
         )
     }
 }

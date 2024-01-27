@@ -13,6 +13,8 @@ import com.example.wordlehelper.model.WordInfo
 import com.example.wordlehelper.model.WordInput
 import com.example.wordlehelper.model.calculateInformationScores
 import com.example.wordlehelper.model.filterPossibleAnswers
+import com.example.wordlehelper.repository.WordRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,8 +23,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.util.Locale
+import javax.inject.Inject
 
-class SolverViewModel : ViewModel(){
+@HiltViewModel
+class SolverViewModel @Inject constructor(private val wordRepository: WordRepository) : ViewModel() {
+
     var rows = mutableStateListOf<RowState>()
 
     init {
@@ -46,38 +51,21 @@ class SolverViewModel : ViewModel(){
         }
     }
 
-    fun loadWordsAndAnswers(context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val loadedWords = readWordsFromFile(context, "Words.txt")
-            val loadedAnswers = readWordsFromFile(context, "Answers.txt")
-            withContext(Dispatchers.Main) {
-                _wordData.value.words = loadedWords
-                _wordData.value.answers = loadedAnswers
-                calculateTopGuesses(emptyList())
-            }
+    fun loadWordsAndAnswers() {
+        viewModelScope.launch {
+            val loadedAnswers = wordRepository.loadAnswers()
+            val loadedWords = wordRepository.loadWords()
+            _wordData.value.words = loadedWords
+            _wordData.value.answers = loadedAnswers
+            calculateTopGuesses(emptyList())
         }
     }
 
-    fun loadAnswersOnly(context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val loadedAnswers = readWordsFromFile(context, "Answers.txt")
-            withContext(Dispatchers.Main) {
-                _wordData.value.answers = loadedAnswers
-                calculateTopGuesses(emptyList())
-            }
-        }
-    }
-
-    private fun readWordsFromFile(context: Context, fileName: String): List<String> {
-        return try {
-            context.assets.open(fileName).bufferedReader().useLines { lines ->
-                lines.filter { it.isNotBlank() }.toList().also {
-                    Log.d("SolverViewModel", "Read ${it.size} words from $fileName")
-                }
-            }
-        } catch (e: IOException) {
-            Log.e("SolverViewModel", "Error reading $fileName", e)
-            emptyList()
+    fun loadAnswers() {
+        viewModelScope.launch {
+            val loadedAnswers = wordRepository.loadAnswers()
+            _wordData.value.answers = loadedAnswers
+            calculateTopGuesses(emptyList())
         }
     }
 
