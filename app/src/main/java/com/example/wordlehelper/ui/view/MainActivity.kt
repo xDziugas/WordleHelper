@@ -6,12 +6,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import com.example.wordlehelper.repository.WordRepository
 import com.example.wordlehelper.ui.navigation.WordleHelperNavGraph
 import com.example.wordlehelper.ui.theme.WordleHelperTheme
+import com.example.wordlehelper.ui.viewmodel.SimulatorViewModel
 import com.example.wordlehelper.ui.viewmodel.SolverViewModel
 import com.example.wordlehelper.ui.viewmodel.ThemeViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -22,8 +21,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContent{
             val themeViewModel: ThemeViewModel = viewModel()
-            val viewModel: SolverViewModel by viewModels()
-            AppContent(themeViewModel, viewModel)
+            val solverViewModel: SolverViewModel by viewModels()
+            val simulatorViewModel: SimulatorViewModel by viewModels()
+
+            AppContent(
+                themeViewModel,
+                solverViewModel,
+                simulatorViewModel
+            )
         }
     }
 }
@@ -31,7 +36,8 @@ class MainActivity : AppCompatActivity() {
 @Composable
 fun AppContent(
     themeViewModel: ThemeViewModel,
-    solverViewModel: SolverViewModel
+    solverViewModel: SolverViewModel,
+    simulatorViewModel: SimulatorViewModel
 ){
     val navController = rememberNavController()
 
@@ -44,7 +50,8 @@ fun AppContent(
         WordleHelperNavGraph(
             navController = navController,
             themeViewModel = themeViewModel,
-            solverViewModel = solverViewModel
+            solverViewModel = solverViewModel,
+            simulatorViewModel = simulatorViewModel
         )
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.wordlehelper.ui.viewmodel.SimulatorViewModel
 import com.example.wordlehelper.ui.viewmodel.SolverViewModel
 
 @Composable
@@ -35,5 +36,21 @@ fun GameGrid(
                 }
             )
         }
+    }
+}
+
+@Composable
+fun GameGrid(
+    context: Context,
+    viewModel: SimulatorViewModel
+) {
+    Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        //TODO: Add game grid
     }
 }

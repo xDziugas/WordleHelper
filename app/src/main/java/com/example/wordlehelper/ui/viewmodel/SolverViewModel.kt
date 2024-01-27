@@ -1,6 +1,5 @@
 package com.example.wordlehelper.ui.viewmodel
 
-import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.Color
@@ -15,18 +14,17 @@ import com.example.wordlehelper.model.calculateInformationScores
 import com.example.wordlehelper.model.filterPossibleAnswers
 import com.example.wordlehelper.repository.WordRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.IOException
 import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
-class SolverViewModel @Inject constructor(private val wordRepository: WordRepository) : ViewModel() {
+class SolverViewModel @Inject constructor(
+    private val wordRepository: WordRepository
+) : ViewModel() {
 
     var rows = mutableStateListOf<RowState>()
 
@@ -51,12 +49,10 @@ class SolverViewModel @Inject constructor(private val wordRepository: WordReposi
         }
     }
 
-    fun loadWordsAndAnswers() {
+    fun loadWords() {
         viewModelScope.launch {
-            val loadedAnswers = wordRepository.loadAnswers()
             val loadedWords = wordRepository.loadWords()
             _wordData.value.words = loadedWords
-            _wordData.value.answers = loadedAnswers
             calculateTopGuesses(emptyList())
         }
     }

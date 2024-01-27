@@ -7,12 +7,32 @@ import java.io.IOException
 
 class WordRepository(private val context: Context) {
 
-    suspend fun loadWords(): List<String> = withContext(Dispatchers.IO) {
-        readWordsFromFile("Words.txt")
+    private var words: List<String> = emptyList()
+
+    suspend fun loadWords(): List<String> {
+        withContext(Dispatchers.IO) {
+            words = readWordsFromFile("Words.txt")
+        }.also {
+            return words
+        }
     }
 
-    suspend fun loadAnswers(): List<String> = withContext(Dispatchers.IO) {
-        readWordsFromFile("Answers.txt")
+    suspend fun loadAnswers(): List<String> {
+        withContext(Dispatchers.IO) {
+            if(words.isEmpty()){
+                words = readWordsFromFile("Answers.txt")
+            }
+        }.also {
+            return words
+        }
+    }
+
+    suspend fun getRandomWord(): String {
+        return if(words.isEmpty()){
+            loadAnswers().random()
+        }else{
+            words.random()
+        }
     }
 
     private fun readWordsFromFile(fileName: String): List<String> {
