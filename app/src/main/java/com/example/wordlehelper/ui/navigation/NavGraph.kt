@@ -9,6 +9,7 @@ import com.example.wordlehelper.ui.view.screens.SimulatorScreen
 import com.example.wordlehelper.ui.view.screens.SolverScreen
 import com.example.wordlehelper.ui.view.screens.SplashScreen
 import com.example.wordlehelper.ui.view.screens.StartScreen
+import com.example.wordlehelper.ui.viewmodel.InfoViewModel
 import com.example.wordlehelper.ui.viewmodel.SimulatorViewModel
 import com.example.wordlehelper.ui.viewmodel.SolverViewModel
 import com.example.wordlehelper.ui.viewmodel.ThemeViewModel
@@ -26,7 +27,8 @@ fun WordleHelperNavGraph(
     navController: NavHostController,
     themeViewModel: ThemeViewModel,
     solverViewModel: SolverViewModel,
-    simulatorViewModel: SimulatorViewModel
+    simulatorViewModel: SimulatorViewModel,
+    infoViewModel: InfoViewModel
 ){
     NavHost(
         navController = navController,
@@ -53,7 +55,7 @@ fun WordleHelperNavGraph(
             SimulatorScreen(simulatorViewModel)
         }
         composable(MainDestinations.INFO_SCREEN) {
-            InfoScreen(navController)
+            InfoScreen(infoViewModel)
         }
     }
 }

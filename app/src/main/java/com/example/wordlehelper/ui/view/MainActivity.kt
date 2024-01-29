@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.wordlehelper.ui.navigation.WordleHelperNavGraph
 import com.example.wordlehelper.ui.theme.WordleHelperTheme
+import com.example.wordlehelper.ui.viewmodel.InfoViewModel
 import com.example.wordlehelper.ui.viewmodel.SimulatorViewModel
 import com.example.wordlehelper.ui.viewmodel.SolverViewModel
 import com.example.wordlehelper.ui.viewmodel.ThemeViewModel
@@ -23,11 +24,13 @@ class MainActivity : AppCompatActivity() {
             val themeViewModel: ThemeViewModel = viewModel()
             val solverViewModel: SolverViewModel by viewModels()
             val simulatorViewModel: SimulatorViewModel by viewModels()
+            val infoViewModel: InfoViewModel by viewModels()
 
             AppContent(
                 themeViewModel,
                 solverViewModel,
-                simulatorViewModel
+                simulatorViewModel,
+                infoViewModel
             )
         }
     }
@@ -37,7 +40,8 @@ class MainActivity : AppCompatActivity() {
 fun AppContent(
     themeViewModel: ThemeViewModel,
     solverViewModel: SolverViewModel,
-    simulatorViewModel: SimulatorViewModel
+    simulatorViewModel: SimulatorViewModel,
+    infoViewModel: InfoViewModel
 ){
     val navController = rememberNavController()
 
@@ -51,7 +55,8 @@ fun AppContent(
             navController = navController,
             themeViewModel = themeViewModel,
             solverViewModel = solverViewModel,
-            simulatorViewModel = simulatorViewModel
+            simulatorViewModel = simulatorViewModel,
+            infoViewModel = infoViewModel
         )
     }
 }
